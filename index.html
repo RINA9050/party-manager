@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Manager | Cool Modern Ultimate V105</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f8f9fa; --text-main: #1a1a1a; --text-sub: #757575;
+            --border-color: #e0e0e0; --card-bg: #ffffff; --accent-dark: #2d3748;
+            --color-tank: #e6f2ff; --text-tank: #0055b3;
+            --color-healer: #ebfbf0; --text-healer: #007733;
+            --color-dps: #fff0f0; --text-dps: #b32424;
+            --color-other: #f7f0ff; --text-other: #7722cc;
+            --color-disabled: #f1f3f5; --text-disabled: #adb5bd;
+        }
+        body.ffxiv-theme { 
+            --bg-main: #0b0c10; --text-main: #f0f4f8; --text-sub: #8a99ad; --border-color: #242933; --card-bg: #151922; --accent-dark: #f8fafc; --color-disabled: #1d222f; --text-disabled: #52607a; 
+            --color-tank: #16263d; --text-tank: #7fbcff;
+            --color-healer: #112d1b; --text-healer: #61e091;
+            --color-dps: #3b1818; --text-dps: #ff7676;
+            --color-other: #27163d; --text-other: #d1a3ff;
+        }
+        body { font-family: 'Montserrat', 'Noto Sans JP', sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; padding: 0; transition: background-color 0.4s; position: relative; }
+        
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-repeat: no-repeat; background-position: center; background-size: cover;
+            pointer-events: none; z-index: -1; transition: background-image 0.5s ease, opacity 0.5s ease;
+        }
+        body.dqx-theme::before { background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1000&auto=format&fit=crop&q=60'); opacity: 0.1; }
+        body.ffxiv-theme::before { background-image: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1000&auto=format&fit=crop&q=60'); opacity: 0.15; filter: brightness(1.1); }
+
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-main); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center;
+            padding-top: 10vh; box-sizing: border-box;
+        }
+        .login-box {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            padding: 40px; width: 340px; display: flex; flex-direction: column; gap: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.04); text-align: center;
+        }
+        .login-box input { width: 100%; padding: 10px; font-size: 0.85rem; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); box-sizing: border-box; outline: none; }
+        .login-box button { width: 100%; padding: 12px; background: var(--accent-dark); color: var(--bg-main); border: none; font-weight: bold; cursor: pointer; letter-spacing: 1px; }
+
+        header { display: flex; justify-content: space-between; align-items: flex-end; padding: 40px 60px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); position: relative; box-sizing: border-box; }
+        .header-left h1 { font-size: 2rem; font-weight: 300; letter-spacing: 4px; margin: 0 0 10px 0; }
+        .user-meta { font-size: 0.8rem; color: var(--text-sub); letter-spacing: 1px; }
+        .edit-profile-link { text-decoration: underline; cursor: pointer; margin-left: 10px; font-weight: bold; }
+        
+        .admin-control-panel { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; font-size: 0.75rem; }
+        .mode-toggles { display: flex; gap: 5px; margin-bottom: 5px; }
+        .mode-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-sub); padding: 5px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; transition: 0.3s; }
+        .mode-btn.active { background: var(--accent-dark); color: var(--bg-main); border-color: var(--accent-dark); font-weight: bold; }
+        .creator-box { background: var(--bg-main); padding: 12px; border: 1px solid var(--border-color); display: flex; gap: 8px; align-items: center; }
+        .creator-box select, .creator-box button { font-size: 0.75rem; padding: 6px 12px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-main); outline: none; }
+        .creator-box button { background: var(--accent-dark); color: var(--bg-main); border: none; cursor: pointer; font-weight: bold; }
+
+        .calendar-section { max-width: 1600px; margin: 20px auto 0; padding: 0 40px; box-sizing: border-box; }
+        .calendar-wrapper { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        .calendar-day-box { min-width: 130px; background: var(--card-bg); border: 1px solid var(--border-color); padding: 12px; box-sizing: border-box; flex-shrink: 0; transition: 0.2s; }
+        .calendar-date-header { font-size: 0.75rem; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 6px; text-align: center; }
+        .calendar-item-link { display: block; background: var(--bg-main); border: 1px solid var(--border-color); padding: 6px; margin-bottom: 4px; font-size: 0.65rem; text-decoration: none; color: var(--text-main); cursor: pointer; transition: 0.2s; }
+        .calendar-item-link:hover { border-color: var(--text-main); background: var(--border-color); }
+        
+        .calendar-item-link.completed-item { background-color: var(--color-healer) !important; border-color: var(--text-healer) !important; }
+        body.ffxiv-theme .calendar-item-link.completed-item { background-color: #112d1b !important; border-color: var(--text-healer) !important; }
+        
+        .calendar-item-time { font-weight: bold; color: var(--text-sub); }
+        .calendar-item-title { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0; }
+        .calendar-item-count { font-size: 0.6rem; text-align: right; color: var(--text-sub); font-weight: bold; }
+
+        .calendar-legend { display: flex; gap: 20px; font-size: 0.7rem; color: var(--text-sub); margin-bottom: 8px; justify-content: flex-end; letter-spacing: 1px; font-weight: bold; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-box { display: inline-block; width: 10px; height: 10px; background-color: var(--color-healer); border: 1px solid var(--text-healer); border-radius: 2px; }
+
+        .week-section { max-width: 1600px; margin: 30px auto; padding: 0 40px; box-sizing: border-box; }
+        .week-title { font-size: 1.3rem; font-weight: 700; letter-spacing: 3px; color: var(--text-main); margin-bottom: 15px; border-left: 5px solid var(--accent-dark); padding-left: 12px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+        
+        .week-lane-container { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+        
+        .party-card { min-width: 390px; background: var(--card-bg); border: 1px solid var(--border-color); padding: 25px; position: relative; box-sizing: border-box; flex-shrink: 0; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
+        .party-card.special-card { border-left: 4px solid var(--text-dps); }
+        
+        .party-card.completed-card { border-top: 4px solid var(--text-healer); background-color: #f1f3f5 !important; }
+        body.ffxiv-theme .party-card.completed-card { background-color: #12161f !important; border-color: #242933 !important; }
+        
+        .party-card .card-status-badge { 
+            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            font-size: 0.65rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; 
+            color: #ffffff; background-color: var(--text-healer); padding: 2px 10px; 
+            border-radius: 2px; z-index: 10; margin-left: 0; 
+        }
+
+        .content-hero-banner { 
+            background: #212529 !important; color: #ffffff !important; 
+            padding: 16px 20px; font-size: 1.2rem; font-weight: 700; letter-spacing: 2px;
+            text-align: center; margin-bottom: 20px; word-break: break-all;
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+            width: 100%; box-sizing: border-box;
+        }
+        body.ffxiv-theme .content-hero-banner { background: #1f2430 !important; color: #f0f4f8 !important; border: 1px solid var(--border-color); }
+        .content-hero-banner::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 4px; background: var(--text-sub); }
+
+        .admin-card-type-label { font-size: 0.65rem; font-weight: bold; color: var(--text-sub); letter-spacing: 1px; text-transform: uppercase; margin-top: -4px; margin-bottom: 12px; display: block; padding-left: 2px; }
+
+        .meta-info-block { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 0.8rem; width: 100%; box-sizing: border-box; }
+        .meta-cell { background: var(--bg-main); padding: 10px 14px; border: 1px solid var(--border-color); }
+        body.ffxiv-theme .meta-cell { background: #12151c !important; }
+        .meta-cell-label { font-size: 0.65rem; color: var(--text-sub); font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px; }
+        
+        .meta-cell-value-highlight { font-size: 1.1rem; font-weight: bold; color: var(--text-main); letter-spacing: 0.5px; }
+        .meta-cell-value { font-weight: bold; word-break: break-all; }
+
+        .input-group-admin { background: var(--bg-main); padding: 15px; border: 1px solid var(--border-color); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+        body.ffxiv-theme .input-group-admin { background: #12151c !important; }
+        .input-group-admin label { font-size: 0.65rem; font-weight: bold; color: var(--text-sub); display: block; margin-bottom: 4px; }
+        .input-group-admin input, .input-group-admin select { width: 100%; padding: 8px; font-size: 0.8rem; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); margin-bottom: 10px; box-sizing: border-box; }
+
+        .party-divider { background: var(--border-color); color: var(--text-main); padding: 4px 12px; margin: 0 0 12px 0; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px; }
+        body.ffxiv-theme .party-divider { background: #1f2430 !important; color: #f0f4f8 !important; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; margin-bottom: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; }
+        .list-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cancel-btn { background: none; color: var(--text-dps); border: none; cursor: pointer; font-size: 0.85rem; font-weight: bold; padding: 2px 6px; }
+        
+        .interaction-area { border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 15px; }
+        .join-trigger-btn { width: 100%; padding: 12px; background: var(--accent-dark); color: var(--bg-main); border: none; cursor: pointer; font-weight: bold; letter-spacing: 1px; font-size: 0.8rem; }
+        .reserved-slot { border: 1px solid var(--border-color); padding: 12px; margin-bottom: 8px; font-size: 0.8rem; transition: 0.2s; min-width: 190px; }
+        .slot-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; gap: 8px; }
+        
+        .slot-action-row select { font-size: 0.8rem; padding: 6px; background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 4px; outline: none; cursor: pointer; }
+        body.ffxiv-theme .slot-action-row select { background: #1d222f; color: #f0f4f8; }
+
+        .slot-action-row span b, .slot-action-row strong { color: var(--text-main) !important; font-weight: 700; }
+        body.ffxiv-theme .slot-action-row span b { color: #ffffff !important; }
+
+        .job-badge {
+            background-color: #2d3748; color: #ffffff !important;
+            padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
+            font-weight: 700; margin-right: 6px; display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08); letter-spacing: 0.5px;
+        }
+        body.ffxiv-theme .job-badge { background-color: #2d3139; color: #ffffff !important; border: 1px solid #4a5263; }
+
+        .role-tank { background-color: var(--color-tank) !important; color: var(--text-tank) !important; border-left: 4px solid var(--text-tank); }
+        .role-healer, .role-pure, .role-barrier { background-color: var(--color-healer) !important; color: var(--text-healer) !important; border-left: 4px solid var(--text-healer); }
+        .role-dps, .role-melee, .role-ranged, .role-free_dps { background-color: var(--color-dps) !important; color: var(--text-dps) !important; border-left: 4px solid var(--text-dps); }
+        .role-other { background-color: var(--color-other) !important; color: var(--text-other) !important; border-left: 4px solid var(--text-other); }
+
+        select option { background-color: var(--card-bg); color: var(--text-main); }
+        body.ffxiv-theme select option { background-color: #1a1d24; color: #ffffff; }
+        select option.opt-tank { background-color: var(--color-tank) !important; color: var(--text-tank) !important; }
+        select option.opt-healer { background-color: var(--color-healer) !important; color: var(--text-healer) !important; }
+        select option.opt-dps { background-color: var(--color-dps) !important; color: var(--text-dps) !important; }
+        select option.opt-other { background-color: var(--color-other) !important; color: var(--text-other) !important; }
+        
+        select option:disabled { background-color: var(--color-disabled) !important; color: var(--text-disabled) !important; font-style: italic; }
+        optgroup { font-weight: bold; background-color: var(--bg-main); color: var(--text-main); }
+        body.ffxiv-theme optgroup { background-color: #121318; color: #8a99ad; }
+
+        /* 変更：【スマホ用並列配置レスポンシブ回路】 */
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: flex-start; padding: 25px; gap: 20px; }
+            .admin-control-panel { width: 100%; align-items: flex-start; }
+            .creator-box { width: 100%; flex-wrap: wrap; }
+            .calendar-section { padding: 0 15px; }
+            .week-section { padding: 0 15px; margin: 20px auto; }
+            
+            /* 修正：スマホ画面でもPC版と同じ横並び（並列）を維持するため、カード自体の横幅をコンテンツに合わせて自動拡張（固定解除） */
+            .party-card { min-width: auto; max-width: none; width: max-content !important; padding: 18px; box-sizing: border-box; }
+            
+            /* 修正：スマホ時の縦方向強制折り返し（column）を完全に撤去し、PC版と同じrow（横並び）を100%維持 */
+            .party-groups-wrapper { flex-direction: row !important; gap: 20px !important; }
+            .party-group-box { width: auto !important; min-width: 200px !important; flex: 1; }
+            .reserved-slot { min-width: 190px !important; width: auto !important; box-sizing: border-box; }
+        }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="font-weight:300; letter-spacing:2px; margin-bottom:25px;">PARTY MANAGER LOG-IN</h2>
+            <input type="text" id="loginId" placeholder="ACCOUNT ID">
+            <input type="password" id="loginPass" placeholder="PASSWORD (30408)">
+            <input type="password" id="adminKey" placeholder="ADMIN SECRET KEY">
+            <button onclick="window.handleLogin()">AUTHENTIFICATE</button>
+        </div>
+    </div>
+
+    <div id="appContent" style="display: none;">
+        <header>
+            <div class="header-left">
+                <h1 id="mainTitle">PARTY MANAGER</h1>
+                <div class="user-meta">
+                    ID: <strong id="userIdDisplay"></strong>
+                    <span class="edit-profile-link" onclick="window.editProfile()">[NAME PROFILE]</span>
+                    <span class="edit-profile-link" onclick="window.logout()" style="color:#cc3333; margin-left:15px;">[LOGOUT]</span>
+                </div>
+                <div id="adminBadge" style="display:none; font-size:0.65rem; color:#cc3333; font-weight:bold; letter-spacing:1px; margin-top:5px;">● SECURITY LEVEL: MASTER ADMINISTRATOR</div>
+            </div>
+            
+            <div class="admin-control-panel">
+                <div class="mode-toggles">
+                    <button class="mode-btn active" id="btn-dqx" onclick="window.switchMode('DQX')">DQX</button>
+                    <button class="mode-btn" id="btn-ffxiv" onclick="window.switchMode('FFXIV')">FFXIV</button>
+                </div>
+                <div class="creator-box" id="panelAdminOnly" style="display:none;">
+                    <select id="newCardType" onchange="window.updateMaxSelectOptions()">
+                        <option value="normal">通常募集形式（事前スロット可視化）</option>
+                        <option value="reserved">指定予約形式（管理者職設定型）</option>
+                    </select>
+                    <select id="newCardMaxDQX">
+                        <option value="4_strict">4人募集 (制限あり)</option>
+                        <option value="8_strict">8人募集 (制限あり)</option>
+                        <option value="12_strict">12人募集 (制限あり)</option>
+                        <option value="4_free">4人募集 (無制限)</option>
+                        <option value="8_free">8人募集 (無制限)</option>
+                        <option value="12_free">12人募集 (無制限)</option>
+                    </select>
+                    <select id="newCardMaxFFXIV">
+                        <option value="4_strict_v">4人編成 (制限/被り可)</option>
+                        <option value="4_strict_nv">4人編成 (制限/被り不可)</option>
+                        <option value="8_strict">8人レイド (制限あり)</option>
+                        <option value="24_strict">24人アライアンス (制限あり)</option>
+                        <option value="4_free">4人編成 (無制限)</option>
+                        <option value="8_free">8人編成 (無制限)</option>
+                        <option value="24_free">24人編成 (無制限)</option>
+                    </select>
+                    <button onclick="window.createNewCardClick()">CREATE CARD</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="calendar-section">
+            <div class="calendar-legend">
+                <div class="legend-item" style="color: var(--text-dps);"><span style="margin-right:2px;">⚠️</span><span>開催6時間前に集まらない場合は中止</span></div>
+                <div class="legend-item"><span>★：MY ENTRY</span></div>
+                <div class="legend-item"><span class="legend-box"></span><span>：COMPLETED</span></div>
+            </div>
+            <div class="calendar-wrapper" id="topCalendarTimeline"></div>
+        </div>
+        
+        <div id="timelineLaneRoot"></div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 【最重要】ここにFirebaseの設定を貼り付けます
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAj5K7xXH_6nzExcE6kbvi5tV8E6FxUmNU",
+  authDomain: "partymanager-48162.firebaseapp.com",
+  databaseURL: "https://partymanager-48162-default-rtdb.firebaseio.com",
+  projectId: "partymanager-48162",
+  storageBucket: "partymanager-48162.firebasestorage.app",
+  messagingSenderId: "476500807480",
+  appId: "1:476500807480:web:00e6e735045148aecc3bcd",
+  measurementId: "G-WS9X222730"
+        };
+        // ==========================================
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('partyData_V4');
+
+        const MASTER_PASS = "30408";
+        const ADMIN_SECRET = "00440088";
+
+        let currentMode = localStorage.getItem('currentMode') || 'DQX';
+        let dataStore = { DQX: [], FFXIV: [] };
+
+        dbRef.on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+                dataStore = val;
+                if (!dataStore.DQX) dataStore.DQX = [];
+                if (!dataStore.FFXIV) dataStore.FFXIV = [];
+                checkAutoReset();
+                if (document.getElementById('appContent').style.display === 'block') render();
+            } else {
+                dbRef.set({ DQX: [], FFXIV: [] });
+            }
+        });
+
+        function saveData() { dbRef.set(dataStore); }
+
+        const ROLE_MAP = {
+            DQX: { "戦士": "tank", "パラディン": "tank", "ガーディアン": "tank", "魔剣士": "tank", "僧侶": "healer", "賢者": "healer", "デスマスター": "healer", "隠者": "healer", "魔法使い": "dps", "武闘家": "dps", "バトルマスター": "dps", "まもの使い": "dps", "踊り子": "dps", "竜術士": "dps", "海賊": "dps", "遊び人": "other", "盗賊": "other", "旅芸人": "other", "魔法戦士": "other", "レンジャー": "other", "スーパースター": "other", "どうぐ使い": "other", "占い師": "other", "天地雷鳴士": "other" },
+            FFXIV: { "ナイト": "tank", "戦士": "tank", "暗黒騎士": "tank", "ガンブレイカー": "tank", "白魔道士": "healer", "学者": "healer", "占星術師": "healer", "賢者": "healer", "モンク": "dps", "竜騎士": "dps", "忍者": "dps", "侍": "dps", "リーパー": "dps", "ヴァイパー": "dps", "吟遊詩人": "dps", "機工士": "dps", "踊り子": "dps", "黒魔道士": "dps", "召喚士": "dps", "赤魔道士": "dps", "ピクトマンサー": "dps", "青魔道士": "other" }
+        };
+
+        const SUB_ROLE_MAP = { "ナイト": "tank", "戦士": "tank", "暗黒騎士": "tank", "ガンブレイカー": "tank", "白魔道士": "pure", "学者": "barrier", "占星術師": "pure", "賢者": "barrier", "モンク": "melee", "竜騎士": "melee", "忍者": "melee", "侍": "melee", "リーパー": "melee", "ヴァイパー": "melee", "吟遊詩人": "ranged", "機工士": "ranged", "踊り子": "ranged", "黒魔道士": "ranged", "召喚士": "ranged", "赤魔道士": "ranged", "ピクトマンサー": "ranged" };
+        const DQX_HEALERS = ["僧侶", "賢者", "デスマスター", "隠者", "旅芸人"];
+
+        function formatDateTimeWithDay(dtStr) {
+            if (!dtStr || dtStr === "未設定") return "未設定";
+            try {
+                const dt = new Date(dtStr);
+                if (isNaN(dt.getTime())) return dtStr;
+                const m = dt.getMonth() + 1; const d = dt.getDate();
+                const w = ["日", "月", "火", "水", "木", "金", "土"][dt.getDay()];
+                const hr = String(dt.getHours()).padStart(2, '0'); const min = String(dt.getMinutes()).padStart(2, '0');
+                return `${m}/${d}(${w}) ${hr}:${min}`;
+            } catch(e) { return dtStr; }
+        }
+
+        function roundTo15Minutes(dtStr) {
+            if (!dtStr || dtStr === "未設定" || dtStr.trim() === "") return "未設定";
+            try {
+                const dt = new Date(dtStr);
+                if (isNaN(dt.getTime())) return dtStr;
+                const mins = dt.getMinutes();
+                const roundedMins = Math.round(mins / 15) * 15;
+                dt.setMinutes(roundedMins); dt.setSeconds(0);
+                const tzOffset = dt.getTimezoneOffset() * 60000;
+                return new Date(dt.getTime() - tzOffset).toISOString().slice(0, 16);
+            } catch(e) { return dtStr; }
+        }
+
+        function buildSlotsDefinition(mode, maxStr) {
+            const maxNum = maxStr.includes('24') ? 24 : maxStr.includes('12') ? 12 : maxStr.includes('8') ? 8 : 4;
+            let slots = [];
+            if (mode === 'DQX') {
+                if (maxStr.includes('strict')) {
+                    const totalParties = maxNum / 4;
+                    for (let p = 0; p < totalParties; p++) {
+                        for (let s = 0; s < 3; s++) slots.push({ roleType: "attacker", label: `アタッカー枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "healer", label: `ヒーラー枠 (僧侶/賢者/デス/隠者/旅芸人)`, name: "", job: "", accountId: "" });
+                    }
+                } else {
+                    for (let i = 0; i < maxNum; i++) slots.push({ roleType: "free", label: `SLOT ${i+1}`, name: "", job: "", accountId: "" });
+                }
+            } else {
+                if (maxStr === '4_strict_v' || maxStr === '4_strict_nv') {
+                    slots.push({ roleType: "tank", label: "TANK枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "healer", label: "HEALER枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "dps", label: "DPS枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "dps", label: "DPS枠", name: "", job: "", accountId: "" });
+                } else if (maxStr === '8_strict') {
+                    slots.push({ roleType: "tank", label: "MT枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "tank", label: "ST枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "pure", label: "H1 (ピュアヒーラー)枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "barrier", label: "H2 (バリアヒーラー)枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "melee", label: "D-1 (近接DPS)枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "melee", label: "D-2 (近接DPS)枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "ranged", label: "D-3 (遠隔DPS)枠", name: "", job: "", accountId: "" });
+                    slots.push({ roleType: "ranged", label: "D-4 (遠隔DPS)枠", name: "", job: "", accountId: "" });
+                } else if (maxStr === '24_strict') {
+                    ["A", "B", "C"].forEach(letter => {
+                        slots.push({ roleType: "tank", label: `TANK枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "pure", label: `H1 (ピュア)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "barrier", label: `H2 (バリア)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "melee", label: `D-1 (近接)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "melee", label: `D-2 (近接)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "ranged", label: `D-3 (遠隔)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "ranged", label: `D-4 (遠隔)枠`, name: "", job: "", accountId: "" });
+                        slots.push({ roleType: "free_dps", label: `D-5 (フリーDPS)枠`, name: "", job: "", accountId: "" });
+                    });
+                } else {
+                    for (let i = 0; i < maxNum; i++) slots.push({ roleType: "free", label: `SLOT ${i+1}`, name: "", job: "", accountId: "" });
+                }
+            }
+            return slots;
+        }
+
+        function checkAutoReset() {
+            let changed = false; const now = new Date().getTime();
+            ['DQX', 'FFXIV'].forEach(m => {
+                dataStore[m]?.forEach(p => {
+                    if (p.time && p.time !== "未設定") {
+                        const pt = new Date(p.time).getTime();
+                        if (!isNaN(pt) && now > pt + 30 * 60 * 1000) {
+                            p.content = "未設定"; p.time = "未設定"; p.place = "未設定"; p.allowSpecial = false;
+                            p.slots = buildSlotsDefinition(m, p.max); changed = true;
+                        }
+                    }
+                });
+            });
+            if (changed) saveData();
+        }
+        setInterval(checkAutoReset, 30000);
+
+        window.jumpToCardBlock = function(originIdx) {
+            const target = document.getElementById('card-block-' + originIdx);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        };
+
+        window.updateMaxSelectOptions = function() {
+            const type = document.getElementById('newCardType').value;
+            const dqxMax = document.getElementById('newCardMaxDQX');
+            const ffxivMax = document.getElementById('newCardMaxFFXIV');
+            
+            if (dqxMax) {
+                Array.from(dqxMax.options).forEach(opt => {
+                    if (type === 'reserved' && opt.value.includes('strict')) {
+                        opt.disabled = true; opt.style.display = 'none';
+                    } else {
+                        opt.disabled = false; opt.style.display = 'block';
+                    }
+                });
+                if (type === 'reserved' && dqxMax.value.includes('strict')) dqxMax.value = '4_free';
+            }
+            if (ffxivMax) {
+                Array.from(ffxivMax.options).forEach(opt => {
+                    if (type === 'reserved' && opt.value.includes('strict')) {
+                        opt.disabled = true; opt.style.display = 'none';
+                    } else {
+                        opt.disabled = false; opt.style.display = 'block';
+                    }
+                });
+                if (type === 'reserved' && ffxivMax.value.includes('strict')) ffxivMax.value = '4_free';
+            }
+        };
+
+        window.handleLogin = function() {
+            const id = document.getElementById('loginId').value.trim();
+            if (document.getElementById('loginPass').value !== MASTER_PASS) return alert("パスワードが違います");
+            if (!id) return alert("IDを入力してください");
+            localStorage.setItem('accountId', id);
+            localStorage.setItem('isAdmin', (document.getElementById('adminKey').value === ADMIN_SECRET) ? "true" : "false");
+            initApp();
+        };
+
+        window.logout = function() { localStorage.removeItem('accountId'); localStorage.removeItem('isAdmin'); location.reload(); };
+
+        window.createNewCardClick = function() {
+            const type = document.getElementById('newCardType').value;
+            const max = currentMode === 'DQX' ? document.getElementById('newCardMaxDQX').value : document.getElementById('newCardMaxFFXIV').value;
+            const newCard = {
+                type: type, max: max, content: "未設定", time: "未設定", place: "未設定", allowSpecial: false,
+                slots: buildSlotsDefinition(currentMode, max)
+            };
+            if (!dataStore[currentMode]) dataStore[currentMode] = [];
+            dataStore[currentMode].push(newCard); saveData();
+        };
+
+        window.resetCardClick = function(originIdx) {
+            if (!confirm("このカードの募集内容を初期化しますか？")) return;
+            const p = dataStore[currentMode][originIdx];
+            p.content = "未設定"; p.time = "未設定"; p.place = "未設定"; p.allowSpecial = false;
+            p.slots = buildSlotsDefinition(currentMode, p.max); saveData();
+        };
+
+        window.deleteCardClick = function(originIdx) {
+            if (!confirm("このカードを削除しますか？")) return;
+            dataStore[currentMode].splice(originIdx, 1); saveData();
+        };
+
+        window.updateField = function(originIdx, key, val) { 
+            if (key === 'time') val = roundTo15Minutes(val);
+            dataStore[currentMode][originIdx][key] = val; saveData(); 
+        };
+
+        window.occupySlot = function(originIdx, slotIdx) {
+            const isAdmin = localStorage.getItem('isAdmin') === "true";
+            let id = localStorage.getItem('accountId');
+            let name = currentMode === 'DQX' ? (localStorage.getItem('dqxName') || id) : (localStorage.getItem('ff14Name') || id);
+            
+            const party = dataStore[currentMode][originIdx];
+            const slot = party.slots[slotIdx];
+
+            if (isAdmin) {
+                const proxyName = prompt("登録する参加者の名前を入力してください:", name);
+                if (!proxyName) return;
+                name = proxyName; id = "admin-proxy-" + Date.now();
+            } else {
+                if (party.slots.some(s => s.accountId === id)) return alert("既に参加済みです");
+            }
+
+            let job = "";
+            if (party.type === 'reserved' && !isAdmin) {
+                job = slot.job;
+            } else {
+                job = document.getElementById(`select-job-${originIdx}-${slotIdx}`)?.value;
+            }
+
+            if (!job) return alert("職業/ジョブを選択してください");
+
+            if (currentMode === 'FFXIV' && party.max.includes('strict')) {
+                if (party.max === '4_strict_nv' || party.max === '8_strict') {
+                    if (party.slots.some((s, idx) => idx !== slotIdx && s.job === job)) return alert("同一ジョブ禁止ルールです");
+                }
+                if (party.max === '24_strict') {
+                    const groupSize = 8;
+                    const currentGroupIndex = Math.floor(slotIdx / groupSize);
+                    const allianceLetter = ["A", "B", "C"][currentGroupIndex];
+                    
+                    const startIdx = currentGroupIndex * groupSize;
+                    const endIdx = startIdx + groupSize;
+                    
+                    let isJobTakenInAlliance = false;
+                    for (let i = startIdx; i < endIdx; i++) {
+                        if (i !== slotIdx && party.slots[i] && party.slots[i].job === job) {
+                            isJobTakenInAlliance = true; break;
+                        }
+                    }
+                    if (isJobTakenInAlliance) return alert(`アライアンス ${allianceLetter} 内で同一ジョブが既に選択されています`);
+                }
+            }
+
+            slot.accountId = id; slot.name = name; slot.job = job; saveData();
+        };
+
+        window.leaveSlot = function(originIdx, slotIdx) {
+            const party = dataStore[currentMode][originIdx];
+            party.slots[slotIdx].accountId = ""; 
+            party.slots[slotIdx].name = ""; 
+            
+            if (party.type === 'reserved') {
+                // 予約形式時は職業枠を維持
+            } else {
+                party.slots[slotIdx].job = "";
+            }
+            saveData();
+        };
+
+        window.adminSetSlotJob = function(originIdx, slotIdx, job) {
+            dataStore[currentMode][originIdx].slots[slotIdx].job = job; saveData();
+        };
+
+        window.switchMode = function(mode) {
+            currentMode = mode; localStorage.setItem('currentMode', mode);
+            document.body.className = (mode === 'FFXIV') ? 'ffxiv-theme' : 'dqx-theme';
+            document.getElementById('mainTitle').innerText = `PARTY MANAGER [${mode}]`;
+            document.getElementById('btn-dqx').classList.toggle('active', mode === 'DQX');
+            document.getElementById('btn-ffxiv').classList.toggle('active', mode === 'FFXIV');
+            
+            const typeSelect = document.getElementById('newCardType');
+            if (typeSelect) {
+                if (mode === 'DQX') {
+                    typeSelect.options[0].text = "通常募集形式（事前スロット可視化）";
+                    typeSelect.options[1].text = "指定予約形式（管理者職設定型）";
+                } else {
+                    typeSelect.options[0].text = "通常コンポ形式（事前ロール可視化）";
+                    typeSelect.options[1].text = "固定予約形式（管理者ジョブ設定型）";
+                }
+            }
+
+            document.getElementById('newCardMaxDQX').style.display = mode === 'DQX' ? 'block' : 'none';
+            document.getElementById('newCardMaxFFXIV').style.display = mode === 'FFXIV' ? 'block' : 'none';
+            
+            window.updateMaxSelectOptions(); render();
+        };
+
+        window.editProfile = function() {
+            const id = localStorage.getItem('accountId');
+            const nDqx = prompt("DQXの名前設定:", localStorage.getItem('dqxName') || id);
+            const nFf = prompt("FFXIVの名前設定:", localStorage.getItem('ff14Name') || id);
+            if (nDqx !== null && nFf !== null) {
+                localStorage.setItem('dqxName', nDqx || id); localStorage.setItem('ff14Name', nFf || id);
+                render();
+            }
+        };
+
+        function initApp() {
+            const id = localStorage.getItem('accountId');
+            if (id) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('userIdDisplay').innerText = id;
+                const isAdmin = localStorage.getItem('isAdmin') === "true";
+                document.getElementById('adminBadge').style.display = isAdmin ? "block" : "none";
+                document.getElementById('panelAdminOnly').style.display = isAdmin ? "flex" : "none";
+                window.switchMode(currentMode);
+            }
+        }
+
+        function generateJobOptionsHTML(mode, roleType, allowSpecial, currentPartySlots, targetJob) {
+            let html = `<option value="">--職業選択--</option>`;
+            if (mode === 'DQX') {
+                let tankGroup = `<optgroup label="戦士・パラ・ガデ・魔剣士">
+                    <option value="戦士" class="opt-tank" ${targetJob==='戦士'?'selected':''}>戦士</option>
+                    <option value="パラディン" class="opt-tank" ${targetJob==='パラディン'?'selected':''}>パラディン</option>
+                    <option value="ガーディアン" class="opt-tank" ${targetJob==='ガーディアン'?'selected':''}>ガーディアン</option>
+                    <option value="魔剣士" class="opt-tank" ${targetJob==='魔剣士'?'selected':''}>魔剣士</option>
+                </optgroup>`;
+                
+                let healerGroup = `<optgroup label="僧侶・賢者・デス・隠者・旅芸人">
+                    <option value="僧侶" class="opt-healer" ${targetJob==='僧侶'?'selected':''}>僧侶</option>
+                    <option value="賢者" class="opt-healer" ${targetJob==='賢者'?'selected':''}>賢者</option>
+                    <option value="デスマスター" class="opt-healer" ${targetJob==='デスマスター'?'selected':''}>デスマスター</option>
+                    <option value="隠者" class="opt-healer" ${targetJob==='隠者'?'selected':''}>隠者</option>
+                    <option value="旅芸人" class="opt-other" ${targetJob==='旅芸人'?'selected':''}>旅芸人</option>
+                </optgroup>`;
+                
+                let otherGroup = `<optgroup label="その他補助グループ">
+                    <option value="盗賊" class="opt-other" ${targetJob==='盗賊'?'selected':''}>盗賊</option>
+                    <option value="レンジャー" class="opt-other" ${targetJob==='レンジャー'?'selected':''}>レンジャー</option>
+                    <option value="魔法戦士" class="opt-other" ${targetJob==='魔法戦士'?'selected':''}>魔法戦士</option>
+                    <option value="どうぐ使い" class="opt-other" ${targetJob==='どうぐ使い'?'selected':''}>どうぐ使い</option>
+                    <option value="スーパースター" class="opt-other" ${targetJob==='スーパースター'?'selected':''}>スーパースター</option>
+                    <option value="占い師" class="opt-other" ${targetJob==='占い師'?'selected':''}>占い師</option>
+                    <option value="天地雷鳴士" class="opt-other" ${targetJob==='天地雷鳴士'?'selected':''}>天地雷鳴士</option>
+                    ${allowSpecial ? `<option value="遊び人" class="opt-other" ${targetJob==='遊び人'?'selected':''}>遊び人</option>` : ''}
+                </optgroup>`;
+                
+                let dpsGroup = `<optgroup label="魔法・武闘・バト・まも・踊り・竜術・海賊">
+                    <option value="魔法使い" class="opt-dps" ${targetJob==='魔法使い'?'selected':''}>魔法使い</option>
+                    <option value="武闘家" class="opt-dps" ${targetJob==='武闘家'?'selected':''}>武闘家</option>
+                    <option value="バトルマスター" class="opt-dps" ${targetJob==='バトルマスター'?'selected':''}>バトルマスター</option>
+                    <option value="まもの使い" class="opt-dps" ${targetJob==='まもの使い'?'selected':''}>まもの使い</option>
+                    <option value="踊り子" class="opt-dps" ${targetJob==='踊り子'?'selected':''}>踊り子</option>
+                    <option value="竜術士" class="opt-dps" ${targetJob==='竜術士'?'selected':''}>竜術士</option>
+                    <option value="海賊" class="opt-dps" ${targetJob==='海賊'?'selected':''}>海賊</option>
+                </optgroup>`;
+
+                if (roleType === 'attacker') return html + tankGroup + otherGroup + dpsGroup;
+                if (roleType === 'healer') return html + healerGroup;
+                return html + tankGroup + healerGroup + otherGroup + dpsGroup;
+            } else {
+                let tOpt = "", hOpt = "", dOpt = "";
+                Object.keys(ROLE_MAP.FFXIV).forEach(job => {
+                    if (job === '青魔導士' && !allowSpecial) return;
+                    let r = ROLE_MAP.FFXIV[job]; let sub = SUB_ROLE_MAP[job] || r;
+                    let disabledStr = "";
+                    
+                    if (roleType === 'tank' && r !== 'tank') disabledStr = "disabled";
+                    if (roleType === 'healer' && r !== 'healer') disabledStr = "disabled";
+                    if (roleType === 'pure' && sub !== 'pure') disabledStr = "disabled";
+                    if (roleType === 'barrier' && sub !== 'barrier') disabledStr = "disabled";
+                    if (roleType === 'melee' && sub !== 'melee') disabledStr = "disabled";
+                    if (roleType === 'ranged' && sub !== 'ranged') disabledStr = "disabled";
+                    if (roleType === 'free_dps' && r !== 'dps') disabledStr = "disabled";
+                    if (roleType === 'dps' && r !== 'dps') disabledStr = "disabled";
+
+                    let htmlOpt = `<option value="${job}" class="opt-${r}" ${targetJob===job?'selected':''} ${disabledStr}>${job}</option>`;
+                    if (r === 'tank') tOpt += htmlOpt;
+                    else if (r === 'healer') hOpt += htmlOpt;
+                    else dOpt += htmlOpt;
+                });
+                return html + `<optgroup label="TANK">${tOpt}</optgroup><optgroup label="HEALER">${hOpt}</optgroup><optgroup label="DPS">${dOpt}</optgroup>`;
+            }
+        }
+
+        function renderSingleSlot(party, slot, originIdx, sIdx, isContentEmpty, myId, isAdmin) {
+            const roleClass = (slot.job) ? (ROLE_MAP[currentMode][slot.job] || slot.roleType) : slot.roleType;
+            const displayLabel = (party.type === 'reserved') ? '指定枠' : slot.label;
+            
+            let slotAction = "";
+            if (slot.name) {
+                const showCancel = (slot.accountId === myId || isAdmin);
+                if (party.type === 'reserved') {
+                    slotAction = `<span><span class="job-badge">${slot.job}</span><b>${slot.name}</b></span>
+                                  ${showCancel ? `<button class="cancel-btn" onclick="window.leaveSlot(${originIdx}, ${sIdx})">✕</button>` : ''}`;
+                } else {
+                    slotAction = `<span><b>${slot.name}</b> <small>[${slot.job}]</small></span>
+                                  ${showCancel ? `<button class="cancel-btn" onclick="window.leaveSlot(${originIdx}, ${sIdx})">✕</button>` : ''}`;
+                }
+            } else {
+                if (isContentEmpty) {
+                    slotAction = `<span style="font-size:0.75rem; color:var(--text-disabled); font-style: italic;">(コンテンツ未設定)</span>`;
+                } else {
+                    if (party.type === 'reserved' && !isAdmin) {
+                        if (slot.job) {
+                            slotAction = `<span><span class="job-badge">${slot.job}</span> 受付中</span> <button onclick="window.occupySlot(${originIdx}, ${sIdx})">参加</button>`;
+                        } else {
+                            slotAction = `<span style="font-size:0.75rem; color:var(--text-sub);">(枠調整中)</span>`;
+                        }
+                    } else {
+                        const jobSelectHTML = generateJobOptionsHTML(currentMode, slot.roleType, party.allowSpecial, party.slots, slot.job);
+                        if (isAdmin) {
+                            slotAction = `<select id="select-job-${originIdx}-${sIdx}" onchange="window.adminSetSlotJob(${originIdx}, ${sIdx}, this.value)">${jobSelectHTML}</select>
+                                          <button onclick="window.occupySlot(${originIdx}, ${sIdx})">代理登録</button>`;
+                        } else {
+                            slotAction = `<select id="select-job-${originIdx}-${sIdx}">${jobSelectHTML}</select>
+                                          <button onclick="window.occupySlot(${originIdx}, ${sIdx})">参加</button>`;
+                        }
+                    }
+                }
+            }
+
+            return `
+                <div class="reserved-slot role-${roleClass}">
+                    <div style="font-size:0.65rem; font-weight:bold; letter-spacing:0.5px; opacity:0.8; margin-bottom:4px;">${displayLabel}</div>
+                    <div class="slot-action-row">${slotAction}</div>
+                </div>
+            `;
+        }
+
+        function render() {
+            const laneRoot = document.getElementById('timelineLaneRoot');
+            const calendarTimeline = document.getElementById('topCalendarTimeline');
+            const isAdmin = localStorage.getItem('isAdmin') === "true";
+            const myId = localStorage.getItem('accountId');
+            
+            const laneScrollPositions = {};
+            document.querySelectorAll('.week-section').forEach(sec => {
+                const title = sec.querySelector('.week-title')?.innerText;
+                const container = sec.querySelector('.week-lane-container');
+                if (title && container) {
+                    laneScrollPositions[title] = container.scrollLeft;
+                }
+            });
+            const savedScrollX = window.scrollX;
+            const savedScrollY = window.scrollY;
+
+            laneRoot.innerHTML = ""; calendarTimeline.innerHTML = "";
+            if (!dataStore[currentMode]) dataStore[currentMode] = [];
+
+            let mappedList = dataStore[currentMode].map((party, originIdx) => ({ party, originIdx }));
+            mappedList.sort((a, b) => {
+                const tA = a.party.time; const tB = b.party.time;
+                if (tA === "未設定" && tB === "未設定") return a.originIdx - b.originIdx;
+                if (tA === "未設定") return 1; if (tB === "未設定") return -1;
+                return new Date(tA).getTime() - new Date(tB).getTime();
+            });
+
+            const baseDate = new Date();
+            const todayMidnight = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate()).getTime();
+            
+            for (let i = 0; i < 31; i++) {
+                const targetDate = new Date(baseDate.getTime() + (i * 24 * 60 * 60 * 1000));
+                const year = targetDate.getFullYear(); const month = targetDate.getMonth() + 1; const date = targetDate.getDate();
+                const dayOfWeek = ["日", "月", "火", "水", "木", "金", "土"][targetDate.getDay()];
+                const dateStringKey = `${year}-${String(month).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+
+                const dayBox = document.createElement('div');
+                dayBox.className = 'calendar-day-box';
+                dayBox.innerHTML = `<div class="calendar-date-header">${month}/${date}(${dayOfWeek})</div>`;
+
+                mappedList.forEach(({ party, originIdx }) => {
+                    if (party.time && party.time !== "未設定" && party.time.startsWith(dateStringKey)) {
+                        if (!isAdmin && (!party.content || party.content === "未設定")) return;
+                        
+                        const totalSlots = party.slots ? party.slots.length : 0;
+                        const filledCount = party.slots ? party.slots.filter(s => s.name && s.name.trim() !== "").length : 0;
+                        const isCardCompleted = totalSlots > 0 && filledCount >= totalSlots;
+
+                        const isMyEntry = party.slots && party.slots.some(s => s.accountId === myId);
+                        const starMark = isMyEntry ? "★ " : "";
+
+                        const timeString = party.time.split('T')[1] || "";
+                        const itemLink = document.createElement('a');
+                        itemLink.className = 'calendar-item-link';
+                        if (isCardCompleted) itemLink.classList.add('completed-item');
+
+                        itemLink.onclick = () => window.jumpToCardBlock(originIdx);
+                        itemLink.innerHTML = `
+                            <div class="calendar-item-time">${timeString}</div>
+                            <div class="calendar-item-title">${starMark}${party.content || "未設定"}</div>
+                            <div class="calendar-item-count">${filledCount} / ${totalSlots}人</div>
+                        `;
+                        dayBox.appendChild(itemLink);
+                    }
+                });
+                calendarTimeline.appendChild(dayBox);
+            }
+
+            const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+            
+            const weekLanesData = [
+                { title: "MY SCHEDULE", isMySchedule: true, cards: [] },
+                { title: "WEEK 1 (DAYS 1-7)", start: todayMidnight, end: todayMidnight + 7 * ONE_DAY_MS, cards: [] },
+                { title: "WEEK 2 (DAYS 8-14)", start: todayMidnight + 7 * ONE_DAY_MS, end: todayMidnight + 14 * ONE_DAY_MS, cards: [] },
+                { title: "WEEK 3 (DAYS 15-21)", start: todayMidnight + 14 * ONE_DAY_MS, end: todayMidnight + 21 * ONE_DAY_MS, cards: [] },
+                { title: "WEEK 4 & BEYOND", start: todayMidnight + 21 * ONE_DAY_MS, end: todayMidnight + 200 * ONE_DAY_MS, cards: [] }
+            ];
+
+            mappedList.forEach(item => {
+                if (item.party.slots && item.party.slots.some(s => s.accountId === myId)) {
+                    weekLanesData[0].cards.push(item);
+                }
+
+                const tStr = item.party.time;
+                if (!tStr || tStr === "未設定") {
+                    weekLanesData[1].cards.push(item);
+                } else {
+                    const tMs = new Date(tStr).getTime();
+                    let assigned = false;
+                    for (let w = 1; w < weekLanesData.length; w++) {
+                        if (tMs >= weekLanesData[w].start && tMs < weekLanesData[w].end) {
+                            weekLanesData[w].cards.push(item); assigned = true; break;
+                        }
+                    }
+                    if (!assigned) weekLanesData[4].cards.push(item);
+                }
+            });
+
+            weekLanesData.forEach(laneInfo => {
+                if (!laneInfo.isMySchedule && !isAdmin && laneInfo.cards.length === 0) return;
+                if (laneInfo.isMySchedule && !isAdmin && laneInfo.cards.length === 0) return;
+
+                const weekSection = document.createElement('div');
+                weekSection.className = 'week-section';
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'week-title';
+                titleDiv.innerText = laneInfo.title;
+                weekSection.appendChild(titleDiv);
+
+                const laneContainer = document.createElement('div');
+                laneContainer.className = 'week-lane-container';
+
+                if (laneInfo.cards.length === 0 && isAdmin) {
+                    const noScheduleText = laneInfo.isMySchedule ? "No registered schedules in your account." : "No recruitment schedules this week.";
+                    laneContainer.innerHTML = `<span style="font-size:0.8rem; color:var(--text-disabled); font-style:italic; padding:10px;">${noScheduleText}</span>`;
+                }
+
+                laneInfo.cards.forEach(({ party, originIdx }) => {
+                    if (!party.slots) party.slots = [];
+                    const totalSlots = party.slots.length;
+                    const filledCount = party.slots.filter(s => s.name && s.name.trim() !== "").length;
+                    const isCompleted = totalSlots > 0 && filledCount >= totalSlots;
+                    const isContentEmpty = !party.content || party.content === "未設定" || party.content.trim() === "" ;
+
+                    const card = document.createElement('div');
+                    
+                    card.id = laneInfo.isMySchedule ? `mysched-block-${originIdx}` : `card-block-${originIdx}`;
+                    card.className = 'party-card' + (party.type === 'reserved' ? ' special-card' : '') + (isCompleted ? ' completed-card' : '');
+                    
+                    const badgeHtml = isCompleted ? `<span class="card-status-badge">COMPLETED</span>` : '';
+                    
+                    let fieldsHtml = "";
+                    if (isAdmin) {
+                        const typeLabelText = currentMode === 'DQX' 
+                            ? (party.type === 'reserved' ? '指定予約形式カード（管理者職設定型）' : '通常募集形式カード（事前スロット可視化）')
+                            : (party.type === 'reserved' ? '固定予約形式カード（管理者ジョブ設定）' : '通常コンポ形式カード（事前ロール可視化）');
+                        fieldsHtml = `
+                            <div class="input-group-admin">
+                                <label>コンテンツ名</label>
+                                <input type="text" value="${party.content}" onchange="window.updateField(${originIdx}, 'content', this.value)">
+                                <div class="admin-card-type-label">[ 募集タイプ: ${typeLabelText} ]</div>
+                                <label>開催日時 (15分単位自動ロック)</label>
+                                <input type="datetime-local" step="900" value="${party.time !== '未設定' ? party.time : ''}" onchange="window.updateField(${originIdx}, 'time', this.value)">
+                                <label>集合場所</label>
+                                <input type="text" value="${party.place}" onchange="window.updateField(${originIdx}, 'place', this.value)">
+                                <label style="margin-top:8px;"><input type="checkbox" ${party.allowSpecial?'checked':''} onchange="window.updateField(${originIdx}, 'allowSpecial', this.checked)"> 特殊職を許可 (${currentMode==='DQX'?'遊び人':'青魔'})</label>
+                            </div>
+                        `;
+                    } else {
+                        let ffxivUserStyle = (currentMode === 'FFXIV') ? 'style="background: #1f2430 !important; color: #ffffff !important;"' : '';
+                        fieldsHtml = `
+                            <div class="content-hero-banner" ${ffxivUserStyle}>【${party.content}】</div>
+                            <div class="meta-info-block">
+                                <div class="meta-cell"><div class="meta-cell-label">開催日時</div><div class="meta-cell-value-highlight">${formatDateTimeWithDay(party.time)}</div></div>
+                                <div class="meta-cell"><div class="meta-cell-label">集合場所</div><div class="meta-value">${party.place}</div></div>
+                            </div>
+                        `;
+                    }
+
+                    let groupSize = 0;
+                    if (currentMode === 'FFXIV' && party.max.includes('24')) groupSize = 8;
+                    else if (currentMode === 'DQX') {
+                        if (party.max.includes('strict')) groupSize = 4;
+                        else if (party.max === '8_free' || party.max === '12_free') groupSize = 4;
+                    }
+
+                    let slotsHtml = `<div class="party-groups-wrapper" style="display:flex; gap:20px; flex-direction:row; align-items:flex-start; width:100%; box-sizing:border-box;">`;
+
+                    if (groupSize > 0) {
+                        const totalGroups = Math.ceil(party.slots.length / groupSize);
+                        for (let g = 0; g < totalGroups; g++) {
+                            let groupLabel = (currentMode === 'FFXIV') ? `ALLIANCE ${["A","B","C"][g]}` : `PARTY ${g+1}`;
+
+                            slotsHtml += `<div class="party-group-box" style="display:flex; flex-direction:column; flex:1; min-width:200px;">`;
+                            slotsHtml += `<div class="party-divider">${groupLabel}</div>`;
+
+                            for (let s = 0; s < groupSize; s++) {
+                                const sIdx = g * groupSize + s;
+                                const slot = party.slots[sIdx];
+                                if (slot) {
+                                    slotsHtml += renderSingleSlot(party, slot, originIdx, sIdx, isContentEmpty, myId, isAdmin);
+                                }
+                            }
+                            slotsHtml += `</div>`;
+                        }
+                    } else {
+                        slotsHtml += `<div class="party-group-box" style="display:flex; flex-direction:column; width:100%;">`;
+                        party.slots.forEach((slot, sIdx) => {
+                            slotsHtml += renderSingleSlot(party, slot, originIdx, sIdx, isContentEmpty, myId, isAdmin);
+                        });
+                        slotsHtml += `</div>`;
+                    }
+                    slotsHtml += `</div>`;
+
+                    card.innerHTML = `
+                        ${badgeHtml}
+                        ${fieldsHtml}
+                        ${slotsHtml}
+                        ${isAdmin ? `
+                            <div style="display:flex; gap:10px; margin-top:20px; width:100%;">
+                                <button onclick="window.resetCardClick(${originIdx})" style="flex:1; background:#e53e3e; color:#fff; border:none; padding:8px; font-weight:bold; cursor:pointer;">リセット</button>
+                                <button onclick="window.deleteCardClick(${originIdx})" style="background:#718096; color:#fff; border:none; padding:8px; font-weight:bold; cursor:pointer;">カード削除</button>
+                            </div>
+                        ` : ''}
+                    `;
+                    laneContainer.appendChild(card);
+                });
+                weekSection.appendChild(laneContainer);
+                laneRoot.appendChild(weekSection);
+            });
+
+            window.scrollTo(savedScrollX, savedScrollY);
+            document.querySelectorAll('.week-section').forEach(sec => {
+                const title = sec.querySelector('.week-title')?.innerText;
+                const container = sec.querySelector('.week-lane-container');
+                if (title && container && laneScrollPositions[title] !== undefined) {
+                    container.scrollLeft = laneScrollPositions[title];
+                }
+            });
+        }
+
+        window.handleLogin = handleLogin;
+        window.logout = logout;
+        window.switchMode = switchMode;
+        window.editProfile = editProfile;
+        window.createNewCardClick = createNewCardClick;
+        window.resetCardClick = resetCardClick;
+        window.deleteCardClick = deleteCardClick;
+        window.updateField = updateField;
+        window.updateMaxSelectOptions = updateMaxSelectOptions;
+
+        if (localStorage.getItem('accountId')) initApp();
+    </script>
+</body>
+</html>
