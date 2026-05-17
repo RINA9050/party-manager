@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Manager | Cool Modern Ultimate V105</title>
+    <title>Party Manager | Cool Modern Ultimate V106</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -161,23 +161,27 @@
         optgroup { font-weight: bold; background-color: var(--bg-main); color: var(--text-main); }
         body.ffxiv-theme optgroup { background-color: #121318; color: #8a99ad; }
 
-        /* 変更：【スマホ用並列配置レスポンシブ回路】 */
         @media (max-width: 768px) {
             header { flex-direction: column; align-items: flex-start; padding: 25px; gap: 20px; }
             .admin-control-panel { width: 100%; align-items: flex-start; }
             .creator-box { width: 100%; flex-wrap: wrap; }
             .calendar-section { padding: 0 15px; }
             .week-section { padding: 0 15px; margin: 20px auto; }
-            
-            /* 修正：スマホ画面でもPC版と同じ横並び（並列）を維持するため、カード自体の横幅をコンテンツに合わせて自動拡張（固定解除） */
             .party-card { min-width: auto; max-width: none; width: max-content !important; padding: 18px; box-sizing: border-box; }
-            
-            /* 修正：スマホ時の縦方向強制折り返し（column）を完全に撤去し、PC版と同じrow（横並び）を100%維持 */
             .party-groups-wrapper { flex-direction: row !important; gap: 20px !important; }
             .party-group-box { width: auto !important; min-width: 200px !important; flex: 1; }
             .reserved-slot { min-width: 190px !important; width: auto !important; box-sizing: border-box; }
         }
     </style>
+
+    <script>
+        // 変更：【ローカル実行完全遮断回路】スクリプトの最頭部に配置し、通信の前に物理的にアプリを自爆ストップさせる数式
+        if (window.location.protocol === 'file:') {
+            alert("ローカルファイルからのアクセスはセキュリティにより禁止されています。GitHub PagesのURLからアクセスしてください。");
+            window.stop();
+            document.documentElement.innerHTML = '<body style="background:#0b0c10; color:#ff7676; display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; margin:0;"><h2>⚠️ ACCESS DENIED (LOCAL FILE PROHIBITED)</h2></body>';
+        }
+    </script>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
@@ -242,7 +246,7 @@
             <div class="calendar-legend">
                 <div class="legend-item" style="color: var(--text-dps);"><span style="margin-right:2px;">⚠️</span><span>開催6時間前に集まらない場合は中止</span></div>
                 <div class="legend-item"><span>★：MY ENTRY</span></div>
-                <div class="legend-item"><span class="legend-box"></span><span>：COMPLETED</span></div>
+                <div class="legend-item"><span class="legend-box"></span><span>■：COMPLETED</span></div>
             </div>
             <div class="calendar-wrapper" id="topCalendarTimeline"></div>
         </div>
